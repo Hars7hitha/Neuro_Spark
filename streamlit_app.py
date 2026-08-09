@@ -60,14 +60,34 @@ if "tracks_played" not in st.session_state:
 def _fading_audio_player(url, key, fade_seconds=2.0):
     fade_ms = int(fade_seconds * 1000)
     html = f"""
-    <div style="font-family: sans-serif;">
-      <audio id="p_{key}" src="{url}" style="width:100%;"></audio>
-      <button id="btn_{key}" style="display:none; margin-top:4px;">▶ Tap to play</button>
+    <div style="font-family: sans-serif; display:flex; align-items:center; gap:10px;">
+      <button id="btn_{key}" title="Play/Pause" style="
+        width:36px; height:36px; border-radius:50%; border:none;
+        background:#1D9E75; color:#fff; display:flex; align-items:center;
+        justify-content:center; cursor:pointer; flex-shrink:0;
+        transition: background 0.15s ease, transform 0.1s ease;
+      " onmouseover="this.style.background='#178a64'" onmouseout="this.style.background='#1D9E75'">
+        <svg id="icon_{key}" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path id="path_{key}" d="M4 2.5v11l9-5.5-9-5.5z"/>
+        </svg>
+      </button>
+      <audio id="p_{key}" src="{url}" style="flex:1; height:32px;"></audio>
     </div>
     <script>
       const audio = document.getElementById("p_{key}");
       const btn = document.getElementById("btn_{key}");
+      const iconPath = document.getElementById("path_{key}");
       audio.volume = 0;
+
+      const PLAY_PATH = "M4 2.5v11l9-5.5-9-5.5z";
+      const PAUSE_PATH = "M3.5 2.5h3v11h-3v-11zM9.5 2.5h3v11h-3v-11z";
+
+      function syncIcon() {{
+        iconPath.setAttribute("d", audio.paused ? PLAY_PATH : PAUSE_PATH);
+      }}
+      audio.addEventListener("play", syncIcon);
+      audio.addEventListener("pause", syncIcon);
+      audio.addEventListener("ended", syncIcon);
 
       function fadeIn() {{
         const steps = 20;
@@ -80,35 +100,26 @@ def _fading_audio_player(url, key, fade_seconds=2.0):
         }}, stepTime);
       }}
 
+      btn.onclick = () => {{
+        if (audio.paused) {{
+          audio.play().then(fadeIn);
+        }} else {{
+          audio.pause();
+        }}
+      }};
+
       const playPromise = audio.play();
       if (playPromise !== undefined) {{
         playPromise.then(fadeIn).catch(() => {{
-          btn.style.display = "inline-block";
-          btn.onclick = () => {{
-            audio.play().then(fadeIn);
-            btn.style.display = "none";
-          }};
+          syncIcon();
         }});
       }} else {{
         fadeIn();
       }}
+      syncIcon();
     </script>
     """
-    components.html(html, height=60)
-
-st.sidebar.header("EEG Input")
-st.sidebar.markdown(f"**Active source:** `{config.EEG_SOURCE}`")
-st.sidebar.caption("Change this in config.py (EEG_SOURCE), not here.")
-
-if config.EEG_SOURCE == "simulation":
-    st.sidebar.markdown(f"**Simulation mode:** `{config.SIMULATION_MODE}`")
-    if config.SIMULATION_MODE == "synthetic":
-        state_choice = st.sidebar.select_slider(
-            "Simulated cognitive state (dev only)",
-            options=["relaxed", "moderate", "focused"],
-            value=source.cognitive_state,
-        )
-        source.cognitive_state = state_choice
+    components.html(html, height=48)
 
 
 @st.fragment(run_every=1)
@@ -149,7 +160,7 @@ def render_chart():
     feats = extract_features(window, fs=source.sample_rate)
 
     if feats is None:
-        st.warning("Signal too flat/short this window — skipping prediction.")
+        st.warning("Signal too flat/short this window: skipping prediction.")
         return
 
     x = pd.DataFrame([[feats[name] for name in FEATURE_NAMES]], columns=FEATURE_NAMES)
@@ -206,7 +217,7 @@ def render_state_and_music():
             st.caption(f"Playlist locked for {remaining:.0f}s more (prevents rapid swapping)")
 
     with col_b:
-        st.subheader("🎵 Adapted for this state")
+        st.subheader("Adapted for this state")
         tags = config.MOOD_TAGS[cognitive_state]
         best_tag = music_engine.preferred_tag(cognitive_state, tags)
 
@@ -234,7 +245,7 @@ def render_state_and_music():
             tracks = st.session_state.current_tracks
 
         if music_engine.last_error:
-            st.caption(f"⚠️ Jamendo fallback: {music_engine.last_error}")
+            st.caption(f"Jamendo fallback: {music_engine.last_error}")
 
         now_playing = tracks[0]
 
