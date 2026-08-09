@@ -3,6 +3,9 @@ import os
 import time
 from collections import Counter, deque
 
+from datetime import datetime
+from fpdf import FPDF
+
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
@@ -47,6 +50,12 @@ if "latest_raw_state" not in st.session_state:
 if "latest_proba" not in st.session_state:
     st.session_state.latest_proba = {}
 
+if "session_start_ts" not in st.session_state:
+    st.session_state.session_start_ts = time.time()
+if "session_log" not in st.session_state:
+    st.session_state.session_log = []
+if "tracks_played" not in st.session_state:
+    st.session_state.tracks_played = []
 
 def _fading_audio_player(url, key, fade_seconds=2.0):
     fade_ms = int(fade_seconds * 1000)
@@ -184,6 +193,7 @@ def render_state_and_music():
         st.session_state.last_state_switch_ts = now
 
     cognitive_state = st.session_state.confirmed_state
+    st.session_state.session_log.append({"ts": time.time(), "cognitive_state": cognitive_state})
 
     with col_a:
         st.subheader("Cognitive state")
@@ -209,6 +219,11 @@ def render_state_and_music():
             )
             st.session_state.current_music_state = cognitive_state
             st.session_state.current_tracks = tracks
+
+            st.session_state.tracks_played.append({
+    "ts": time.time(), "name": tracks[0]["name"], "artist": tracks[0]["artist_name"],
+    "cognitive_state": cognitive_state, "tag": tracks[0]["tag"],
+})
             for t in tracks:
                 st.session_state.shown_track_ids.add(t["id"])
             if len(st.session_state.shown_track_ids) > 30:
@@ -221,9 +236,6 @@ def render_state_and_music():
         if music_engine.last_error:
             st.caption(f"⚠️ Jamendo fallback: {music_engine.last_error}")
 
-        # only the top track is shown -- highlighted as "now playing"
-        # instead of a list, since one clear pick reads better than a
-        # scroll of five during a live demo
         now_playing = tracks[0]
 
         with st.container(border=True):
@@ -237,13 +249,6 @@ def render_state_and_music():
                 st.markdown(f"*{now_playing['artist_name']}*")
 
             if now_playing["audio"]:
-                # fading player, keyed by track id -- Streamlit keeps the
-                # same mounted component (no restart, no re-fade) across
-                # reruns as long as the key is unchanged; it only
-                # remounts when the track actually changes.
-                # No "start session" gate needed: the player tries to
-                # autoplay directly and falls back to an inline
-                # "Tap to play" button if the browser blocks it.
                 _fading_audio_player(now_playing["audio"], key=now_playing["id"])
 
             already_liked = now_playing["id"] in st.session_state.liked_track_ids
@@ -274,9 +279,78 @@ def render_state_and_music():
                 )
                 st.session_state.shown_track_ids.add(replacement["id"])
                 st.session_state.current_tracks[0] = replacement
+
+                st.session_state.tracks_played.append({
+    "ts": time.time(), "name": replacement["name"], "artist": replacement["artist_name"],
+    "cognitive_state": cognitive_state, "tag": replacement["tag"],
+})
                 st.toast(f"Skipped — playing \"{replacement['name']}\" instead.")
                 st.rerun(scope="fragment")
+def _build_session_pdf(state_counts, total_windows, fb_stats, tracks_played):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.cell(0, 10, "NeuroSpark session summary", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True)
+    pdf.ln(4)
 
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Cognitive state distribution", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    for state, count in state_counts.items():
+        pdf.cell(0, 7, f"  {state}: {count} windows ({count/total_windows:.0%})", ln=True)
+    pdf.ln(4)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Feedback", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    if fb_stats["total"]:
+        pdf.cell(0, 7, f"  Likes: {fb_stats['likes']}  Dislikes: {fb_stats['dislikes']}  Ratio: {fb_stats['like_ratio']:.0%}", ln=True)
+    else:
+        pdf.cell(0, 7, "  No feedback recorded this session", ln=True)
+    pdf.ln(4)
+
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Tracks played", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    for t in tracks_played:
+        ts_str = datetime.fromtimestamp(t["ts"]).strftime("%H:%M:%S")
+        pdf.multi_cell(0, 6, f"  [{ts_str}] {t['name']} - {t['artist']} ({t['cognitive_state']}/{t['tag']})")
+
+    return bytes(pdf.output())
+
+
+def render_session_export():
+    st.divider()
+    st.subheader("📄 Session summary")
+    if not st.session_state.session_log:
+        st.caption("Nothing to export yet — let the session run a bit first.")
+        return
+
+    state_counts = Counter(r["cognitive_state"] for r in st.session_state.session_log)
+    total_windows = sum(state_counts.values())
+    fb_stats = music_engine.get_session_feedback_stats(st.session_state.session_start_ts)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.caption("State distribution (this session)")
+        for state, count in state_counts.items():
+            st.write(f"{state}: {count/total_windows:.0%}")
+    with col2:
+        st.caption("Feedback")
+        if fb_stats["total"]:
+            st.write(f"👍 {fb_stats['likes']} · 👎 {fb_stats['dislikes']} ({fb_stats['like_ratio']:.0%} like ratio)")
+        else:
+            st.write("No likes/skips yet")
+
+    csv_df = pd.DataFrame(st.session_state.tracks_played)
+    csv_bytes = csv_df.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Download CSV", csv_bytes, file_name="neurospark_session.csv", mime="text/csv")
+
+    pdf_bytes = _build_session_pdf(state_counts, total_windows, fb_stats, st.session_state.tracks_played)
+    st.download_button("⬇️ Download PDF", pdf_bytes, file_name="neurospark_session.pdf", mime="application/pdf")
 
 render_chart()
 render_state_and_music()
+render_session_export()

@@ -102,6 +102,15 @@ def _load_feedback_log():
         except json.JSONDecodeError:
             return []
 
+def get_session_feedback_stats(since_ts):
+   
+    log = _load_feedback_log()
+    session_log = [r for r in log if r.get("ts", 0) >= since_ts]
+    likes = sum(1 for r in session_log if r["liked"])
+    dislikes = len(session_log) - likes
+    total = len(session_log)
+    ratio = likes / total if total else None
+    return {"likes": likes, "dislikes": dislikes, "total": total, "like_ratio": ratio}
 
 def log_feedback(track_id, cognitive_state, tag, liked):
     os.makedirs(os.path.dirname(FEEDBACK_LOG_PATH), exist_ok=True)
