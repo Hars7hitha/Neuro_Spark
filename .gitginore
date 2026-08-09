@@ -1,0 +1,28 @@
+# env / secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# streamlit
+.streamlit/
+
+# jupyter
+.ipynb_checkpoints/
+
+# os junk
+.DS_Store
+Thumbs.db
+
+# logs / local run data
+data/feedback_log.json
+
+# editors
+.vscode/
+.idea/
