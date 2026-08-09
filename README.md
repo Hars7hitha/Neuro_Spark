@@ -1,14 +1,38 @@
 # NeuroSpark
 
-A live dashboard that reads EEG signals, classifies cognitive workload (**low / moderate / high**) using a trained Random Forest model, and adapts the music being played based on that state: calm/ambient when you're overloaded, upbeat when you're understimulated, and steady instrumental for sustained focus.
+## Team Name
+NeuroSpark  <!-- replace if your registered team name is different from the project name -->
 
-Built with **Streamlit, scikit-learn, and the Jamendo API** for track recommendations.
+## Problem Statement
+Most productivity and focus tools rely on static playlists or generic "focus music" that don't respond to how a person is actually doing cognitively in the moment — someone might be overloaded, understimulated, or in steady focus, and the music never adapts to reflect that.
+
+## Solution Overview
+NeuroSpark is a live dashboard that reads EEG signals, classifies cognitive workload (**low / moderate / high**) using a trained Random Forest model, and adapts the music being played based on that state in real time — calm/ambient when overloaded, upbeat when understimulated, and steady instrumental for sustained focus. The full loop is: **EEG signal → feature extraction → Random Forest classification → mood-tagged music recommendation (Jamendo API) → live Streamlit dashboard with like/skip feedback**, closing the gap between raw brain activity and an actual adaptive experience.
+
+## PPT Link
+[View Presentation](https://drive.google.com/file/d/1wzkMxBb6dFUizY4VHZdbcbrVaxwZx3fd/view?usp=drivesdk)
+
+## Live Demonstration Link
+<!-- add your demo video / live app link here -->
+
+## Technology Stack
+- **Frontend/Dashboard:** Streamlit
+- **ML Model:** scikit-learn (Random Forest classifier)
+- **Signal Processing:** NumPy, SciPy (band-power feature extraction)
+- **Music API:** Jamendo API
+- **Hardware:** BioAmp EXG Pill + Arduino (live EEG acquisition)
+- **Data:** Pandas, joblib (model persistence)
+- **Language:** Python
+
+## Team Members
+- Faheemah M — Team Leader
+- Ananya V Shahapur
+- Harshitha N C
 
 ## Why
-
 Most "focus music" apps just play a static playlist. NeuroSpark tries to close the loop: **read your brain state → determine what you need → adapt the music**, all in real time.
 
-## Running it
+## Setup Instructions
 
 ```bash
 pip install -r requirements.txt
