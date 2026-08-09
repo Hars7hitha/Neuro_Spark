@@ -1,52 +1,58 @@
 # NeuroSpark
 
-A live dashboard that reads EEG signals, classifies cognitive workload (low / moderate / high) using a trained Random Forest model and adapts the music being played based on that state (calm/ambient when you're overloaded, upbeat when you're understimulated, steady instrumental for sustained focus).
+A live dashboard that reads EEG signals, classifies cognitive workload (**low / moderate / high**) using a trained Random Forest model, and adapts the music being played based on that state: calm/ambient when you're overloaded, upbeat when you're understimulated, and steady instrumental for sustained focus.
 
-Built with Streamlit, scikit-learn and the Jamendo API for track recommendations.
+Built with **Streamlit, scikit-learn, and the Jamendo API** for track recommendations.
 
 ## Why
 
-Most "focus music" apps just play a static playlist. This tries to actually close the loop: read your brain state, decide what you need right now, and change the music accordingly, all live.
-
+Most "focus music" apps just play a static playlist. NeuroSpark tries to close the loop: **read your brain state → determine what you need → adapt the music**, all in real time.
 
 ## Running it
 
-\`\`\`bash
+```bash
 pip install -r requirements.txt
-\`\`\`
+```
 
-Get a free Jamendo client ID from https://devportal.jamendo.com, then:
+Get a free Jamendo client ID from [Jamendo Developer Portal](https://devportal.jamendo.com), then:
 
-\`\`\`bash
+```bash
 cp .env.example .env
-# edit .env and paste your JAMENDO_CLIENT_ID in
-\`\`\`
+```
 
-\`\`\`bash
+Edit `.env` and add your `JAMENDO_CLIENT_ID`.
+
+Then run:
+
+```bash
 streamlit run streamlit_app.py
-\`\`\`
+```
 
-By default it replays real EEG samples from the dataset (`SIMULATION_MODE = "dataset_replay"` in `config.py`), so you don't need any hardware to see it work. Switch `EEG_SOURCE` to `"arduino"` in `config.py` if you've got the actual board wired up.
+By default, NeuroSpark replays real EEG samples from the dataset (`SIMULATION_MODE = "dataset_replay"` in `config.py`), so no hardware is required. To use the actual Arduino board, switch `EEG_SOURCE` to `"arduino"` in `config.py`.
 
 ## Model
 
-Random Forest trained on 8 band-power features, evaluated with a held-out subject split (never trained and tested on the same person). Current held-out macro F1 sits around 0.53 — cognitive workload from EEG is a genuinely hard 3-way classification problem, not a solved one, so this is honest performance rather than an inflated number. See `notebooks/01_eda_and_training.ipynb` for the full EDA + training walkthrough.
+A **Random Forest** model trained on 8 band-power features is used for cognitive workload classification. Evaluation uses a **held-out subject split**, ensuring the model is not trained and tested on the same person.
 
-## Project structure
+The current held-out macro-F1 is around **0.53**. Cognitive workload classification from EEG is a challenging 3-class problem, so this represents realistic rather than inflated performance.
 
-\`\`\`
+See `notebooks/01_eda_and_training.ipynb` for the complete EDA and training workflow.
+
+## Project Structure
+
+```text
 neurospark/
-├── streamlit_app.py          # main dashboard
-├── eeg_source.py              # EEG input abstraction (arduino/dataset/synthetic)
-├── music_engine.py            # Jamendo recommendations + feedback logging
-├── config.py                  # single place to flip source, tags, thresholds
-├── train.py                   # model training script
-├── debug_jamendo.py           # standalone script to sanity-check the Jamendo API
+├── streamlit_app.py          # Main dashboard
+├── eeg_source.py             # EEG input abstraction
+├── music_engine.py           # Jamendo recommendations + feedback logging
+├── config.py                 # Configuration and settings
+├── train.py                  # Model training script
+├── debug_jamendo.py          # Jamendo API testing script
 ├── src/
-│   ├── features.py             # band-power feature extraction
-│   └── dataset.py              # builds the training feature table
-├── models/                    # trained classifier + metadata
-├── data/                      # EEG dataset (feedback log is gitignored)
-├── notebooks/                  # EDA + training notebook
-└── arduino/                   # firmware for the real hardware
-\`\`\`
+│   ├── features.py           # Band-power feature extraction
+│   └── dataset.py            # Training feature table generation
+├── models/                   # Trained classifier + metadata
+├── data/                     # EEG dataset
+├── notebooks/                # EDA + training notebook
+└── arduino/                  # Arduino firmware
+```
