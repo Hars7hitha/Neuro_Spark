@@ -121,7 +121,7 @@ def render_sidebar_metrics():
 
 with st.sidebar:
     render_sidebar_metrics()
-st.title("🧠 NeuroSpark — Live EEG Stream")
+st.title("NeuroSpark: Live EEG Stream")
 
 
 @st.fragment(run_every=1)
@@ -323,7 +323,7 @@ def _build_session_pdf(state_counts, total_windows, fb_stats, tracks_played):
 
 def render_session_export():
     st.divider()
-    st.subheader("📄 Session summary")
+    st.subheader("Session summary")
     if not st.session_state.session_log:
         st.caption("Nothing to export yet — let the session run a bit first.")
         return
@@ -346,10 +346,10 @@ def render_session_export():
 
     csv_df = pd.DataFrame(st.session_state.tracks_played)
     csv_bytes = csv_df.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Download CSV", csv_bytes, file_name="neurospark_session.csv", mime="text/csv")
+    st.download_button("⬇Download CSV", csv_bytes, file_name="neurospark_session.csv", mime="text/csv")
 
     pdf_bytes = _build_session_pdf(state_counts, total_windows, fb_stats, st.session_state.tracks_played)
-    st.download_button("⬇️ Download PDF", pdf_bytes, file_name="neurospark_session.pdf", mime="application/pdf")
+    st.download_button("⬇Download PDF", pdf_bytes, file_name="neurospark_session.pdf", mime="application/pdf")
 
 render_chart()
 render_state_and_music()

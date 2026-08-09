@@ -17,7 +17,7 @@ DATASET_TASK_ID = None
 ARDUINO_PORT = "COM5"                  
 ARDUINO_BAUD_RATE = 115200
 
-os.getenv("JAMENDO_CLIENT_ID", "")
+JAMENDO_CLIENT_ID = os.getenv("JAMENDO_CLIENT_ID", "")
 
 MOOD_TAGS = {
     "high":     ["ambient", "calm", "chillout"],
