@@ -2,7 +2,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-EEG_SOURCE = "arduino"   # "simulation" | "arduino"
+EEG_SOURCE = os.getenv("EEG_SOURCE", "simulation")   # "simulation" | "arduino"
+SIMULATION_MODE = "dataset_replay"
 
 SAMPLE_RATE_HZ = 250
 WINDOW_SECONDS = 5
