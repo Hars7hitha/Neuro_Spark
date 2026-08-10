@@ -19,8 +19,8 @@ NeuroSpark is a live dashboard that reads EEG signals, classifies cognitive work
 
 
 ## Live Demonstration Link
-[View Presentation](https://drive.google.com/file/d/1wzkMxBb6dFUizY4VHZdbcbrVaxwZx3fd/view?usp=drivesdk)
-
+[View Demo video](https://drive.google.com/file/d/1wzkMxBb6dFUizY4VHZdbcbrVaxwZx3fd/view?usp=drivesdk)
+[View Presentation](https://docs.google.com/presentation/d/1UpNoO88N2EbMTS6hwcFnSRfqAnhzjvJe/edit?usp=sharing&ouid=115081753363421060141&rtpof=true&sd=true)
 ## Deployed Link
 https://neuro-spark.onrender.com
 
