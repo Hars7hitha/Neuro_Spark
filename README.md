@@ -1,7 +1,7 @@
 # BRAIN TUNE: EEG-BASED ADAPTIVE MUSIC SYSTEM
 
-## Team Name
-NeuroSpark  
+## Team_Name
+NEUROSPARK  
 
 
 ## Team Members
